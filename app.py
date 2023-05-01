@@ -1,3 +1,5 @@
+import os
+
 import gradio as gr
 import torch
 # from transformers import pipeline
@@ -11,11 +13,11 @@ from knockoff_pipeline import InstructionTextGenerationPipeline as pipeline
 #     radius_size=gr.themes.sizes.radius_sm,
 #     font=[gr.themes.GoogleFont("Open Sans"), "ui-sans-serif", "system-ui", "sans-serif"],
 # )
-
 theme = gr.themes.Soft()
 
 
-generate = pipeline("mosaicml/mpt-7b-instruct", torch_dtype=torch.bfloat16, trust_remote_code=True)
+HF_TOKEN = os.getenv("HF_TOKEN", None)
+generate = pipeline("mosaicml/mpt-7b-instruct", torch_dtype=torch.bfloat16, trust_remote_code=True, use_auth_token=HF_TOKEN)
 
 
 examples = [
