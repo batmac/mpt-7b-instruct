@@ -45,7 +45,12 @@ class StopOnTokens(StoppingCriteria):
         return False
 
 
+def clear():
+    output_7b.text = ""
+
+
 def process_stream(instruction, response, temperature, top_p, top_k, max_new_tokens):
+    clear()
     # Tokenize the input
     input_ids = generate.tokenizer(generate.format_instruction(instruction), return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
@@ -74,10 +79,6 @@ def process_stream(instruction, response, temperature, top_p, top_k, max_new_tok
     for new_text in streamer:
         response += new_text
         yield response
-
-
-def clear():
-    output_7b.text = ""
 
 
 with gr.Blocks(theme=theme) as demo:
@@ -164,11 +165,11 @@ with gr.Blocks(theme=theme) as demo:
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
-    ).before(clear)
+    )
     instruction.submit(
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
-    ).before(clear)
+    )
 
 demo.queue(concurrency_count=4).launch(debug=True)
