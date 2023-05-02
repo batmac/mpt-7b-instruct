@@ -27,13 +27,16 @@ generate = pipeline(
     torch_dtype=torch.bfloat16,
     attn_impl="torch",
     trust_remote_code=True,
-    use_auth_token=HF_TOKEN
+    use_auth_token=HF_TOKEN,
 )
 stop_token_ids = generate.tokenizer.convert_tokens_to_ids(["<|endoftext|>"])
 
+
 # Define a custom stopping criteria
 class StopOnTokens(StoppingCriteria):
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
         for stop_id in stop_token_ids:
             if input_ids[0][-1] == stop_id:
                 return True
@@ -42,23 +45,32 @@ class StopOnTokens(StoppingCriteria):
 
 def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
     # Tokenize the input
-    input_ids = generate.tokenizer.encode(instruction, return_tensors='pt')
+    input_ids = generate.tokenizer.encode(instruction, return_tensors="pt").input_ids
+    input_ids = input_ids.to(generate.model.device)
 
     # Initialize the streamer and stopping criteria
-    streamer = TextIteratorStreamer(generate.tokenizer, timeout=10., skip_prompt=True, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(
+        generate.tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True
+    )
     stop = StopOnTokens()
+
+    gkw = {
+        **generate.generate_kwargs,
+        **{
+            "max_new_tokens": max_new_tokens,
+            "temperature": temperature,
+            "top_p": top_p,
+            "top_k": top_k,
+        },
+    }
 
     # Generate text in a streaming fashion
     output = generate.model.generate(
         input_ids,
         streamer=streamer,
-        max_new_tokens=max_new_tokens,
         do_sample=True,
-        temperature=temperature,
-        top_p=top_p,
-        top_k=top_k,
         stopping_criteria=StoppingCriteriaList([stop]),
-        repetition_penalty=1.0,
+        **gkw,
     )
 
     # Return the generator that yields text chunks
@@ -75,7 +87,11 @@ with gr.Blocks(theme=theme) as demo:
     with gr.Row():
         with gr.Column():
             with gr.Row():
-                instruction = gr.Textbox(placeholder="Enter your question here", label="Question", elem_id="q-input")
+                instruction = gr.Textbox(
+                    placeholder="Enter your question here",
+                    label="Question",
+                    elem_id="q-input",
+                )
             with gr.Row():
                 with gr.Column():
                     with gr.Row():
@@ -97,8 +113,10 @@ with gr.Blocks(theme=theme) as demo:
                             maximum=1,
                             step=0.01,
                             interactive=True,
-                            info=("Sample from the smallest possible set of tokens whose cumulative probability "
-                            "exceeds top_p. Set to 1 to disable and sample from all tokens."),
+                            info=(
+                                "Sample from the smallest possible set of tokens whose cumulative probability "
+                                "exceeds top_p. Set to 1 to disable and sample from all tokens."
+                            ),
                         )
                 with gr.Column():
                     with gr.Row():
@@ -137,7 +155,15 @@ with gr.Blocks(theme=theme) as demo:
             fn=process_stream,
             outputs=output_7b,
         )
-    submit.click(process_stream, inputs=[instruction, temperature, top_p, top_k, max_new_tokens], outputs=output_7b)
-    instruction.submit(process_stream, inputs=[instruction, temperature, top_p, top_k, max_new_tokens ], outputs=output_7b)
+    submit.click(
+        process_stream,
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
+        outputs=output_7b,
+    )
+    instruction.submit(
+        process_stream,
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
+        outputs=output_7b,
+    )
 
 demo.queue(concurrency_count=4).launch(debug=True)
