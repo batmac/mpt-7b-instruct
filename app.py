@@ -167,8 +167,9 @@ with gr.Blocks(theme=theme) as demo:
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
-    stop.click(fn=None, inputs=None, outputs=None, cancels=[
-               submit, instruction], queue=False)
-    clear.click(lambda: None, None, [output_7b], queue=False)
+    # these don't work...
+    # stop.click(fn=None, inputs=None, outputs=None, cancels=[
+    #            submit, instruction], queue=False)
+    # clear.click(lambda: None, None, [output_7b], queue=False)
 
 demo.queue(concurrency_count=4).launch(debug=True)
