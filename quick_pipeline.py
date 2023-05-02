@@ -68,7 +68,7 @@ class InstructionTextGenerationPipeline:
             "repetition_penalty": 1.2,  # 1.0 means no penalty, > 1.0 means penalty, 1.2 from CTRL paper
         }
 
-    def format_instruction(instruction):
+    def format_instruction(self, instruction):
         return PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
 
     def __call__(
