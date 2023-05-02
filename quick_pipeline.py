@@ -29,7 +29,12 @@ PROMPT_FOR_GENERATION_FORMAT = """{intro}
 
 class InstructionTextGenerationPipeline:
     def __init__(self, model_name, torch_dtype=torch.bfloat16, trust_remote_code=True, use_auth_token=None) -> None:
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=trust_remote_code, use_auth_token=use_auth_token)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            attn_impl='torch',
+            trust_remote_code=trust_remote_code,
+            use_auth_token=use_auth_token
+        )
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=trust_remote_code, use_auth_token=use_auth_token)
         if tokenizer.pad_token_id is None:
