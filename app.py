@@ -43,7 +43,7 @@ class StopOnTokens(StoppingCriteria):
         return False
 
 
-def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
+def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, callback):
     # Tokenize the input
     input_ids = generate.tokenizer(instruction, return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
@@ -64,16 +64,17 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
         },
     }
 
-    # Generate text in a streaming fashion
-    output = generate.model.generate(
+    # Generate text streaming
+    generate.model.generate(
         input_ids,
         streamer=streamer,
         stopping_criteria=StoppingCriteriaList([stop]),
         **gkw,
     )
 
-    # Return the generator that yields text chunks
-    return streamer
+    # Use the callback function to handle the generated text chunks
+    for new_text in streamer:
+        callback(new_text)
 
 
 with gr.Blocks(theme=theme) as demo:
@@ -146,6 +147,13 @@ with gr.Blocks(theme=theme) as demo:
             gr.Markdown("**MPT-7B-Instruct**")
             output_7b = gr.Markdown()
 
+
+    # love to mix logic with display code, just like jquery!
+    def update_output(new_text):
+        # Update the Gradio output with the new text
+        output_7b.set_value(output_7b.get_value() + new_text)
+
+
     with gr.Row():
         gr.Examples(
             examples=examples,
@@ -156,13 +164,13 @@ with gr.Blocks(theme=theme) as demo:
         )
     submit.click(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
-        outputs=output_7b,
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, update_output],
+        outputs="",
     )
     instruction.submit(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
-        outputs=output_7b,
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, update_output],
+        outputs="",
     )
 
 demo.queue(concurrency_count=4).launch(debug=True)
