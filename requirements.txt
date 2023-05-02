@@ -1,3 +1,4 @@
-transformers
-einops
 -e git+https://github.com/samhavens/just-triton-flash.git#egg=flash_attn
+einops
+torch
+transformers
