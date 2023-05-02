@@ -1,4 +1,7 @@
-# todo if time: add CONTINUE button
+# Copyright 2023 MosaicML spaces authors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# and
+# the https://huggingface.co/spaces/HuggingFaceH4/databricks-dolly authors
 import os
 from threading import Thread
 
@@ -13,13 +16,13 @@ from quick_pipeline import InstructionTextGenerationPipeline as pipeline
 HF_TOKEN = os.getenv("HF_TOKEN", None)
 theme = gr.themes.Soft()
 examples = [
+    # to do: add coupled hparams so e.g. poem has higher temp
     "Write a travel blog about a 3-day trip to Thailand.",
     "What is an alpaca? What are its natural predators?",
-    "Write an email to congratulate MosaicML about the launch of their inference offering.",
+    "Write a quick email to congratulate MosaicML about the launch of their inference offering.",
     "Explain how a candle works to a 6 year old in a few sentences.",
-    "Write a poem about the moon landing.",
     "What are some of the most common misconceptions about birds?",
-    "Write a short story about a robot that becomes sentient and tries to take over the world.",
+    "Write a short story about a robot that has a nice day.",
 ]
 css = ".generating {visibility: hidden}"
 
@@ -57,12 +60,19 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens):
     )
     stop = StopOnTokens()
 
+    if temperature < 0.1:
+        temperature = 0.0
+        do_sample = False
+    else:
+        do_sample = True
+
     gkw = {
         **generate.generate_kwargs,
         **{
             "input_ids": input_ids,
             "max_new_tokens": max_new_tokens,
             "temperature": temperature,
+            "do_sample": do_sample,
             "top_p": top_p,
             "top_k": top_k,
             "streamer": streamer,
@@ -99,9 +109,9 @@ with gr.Blocks(theme=theme) as demo:
                         with gr.Row():
                             temperature = gr.Slider(
                                 label="Temperature",
-                                value=0.4,
+                                value=0.1,
                                 minimum=0.0,
-                                maximum=2.0,
+                                maximum=1.0,
                                 step=0.1,
                                 interactive=True,
                                 info="Higher values produce more diverse outputs",
@@ -110,7 +120,7 @@ with gr.Blocks(theme=theme) as demo:
                         with gr.Row():
                             top_p = gr.Slider(
                                 label="Top-p (nucleus sampling)",
-                                value=0.90,
+                                value=1.0,
                                 minimum=0.0,
                                 maximum=1,
                                 step=0.01,
@@ -135,7 +145,7 @@ with gr.Blocks(theme=theme) as demo:
                         with gr.Row():
                             max_new_tokens = gr.Slider(
                                 label="Maximum new tokens",
-                                value=512,
+                                value=256,
                                 minimum=0,
                                 maximum=1664,
                                 step=5,
