@@ -77,7 +77,7 @@ def process_stream(instruction, response, temperature, top_p, top_k, max_new_tok
 
 
 def clear():
-    output_7b.clear()
+    output_7b.text = ""
 
 
 with gr.Blocks(theme=theme) as demo:
@@ -92,60 +92,60 @@ with gr.Blocks(theme=theme) as demo:
             with gr.Row():
                 instruction = gr.Textbox(
                     placeholder="Enter your question here",
-                    label="Question",
+                    label="Question/Instruction",
                     elem_id="q-input",
                 )
-            with gr.Row():
-                with gr.Column():
-                    with gr.Row():
-                        temperature = gr.Slider(
-                            label="Temperature",
-                            value=0.3,
-                            minimum=0.0,
-                            maximum=2.0,
-                            step=0.1,
-                            interactive=True,
-                            info="Higher values produce more diverse outputs",
-                        )
-                with gr.Column():
-                    with gr.Row():
-                        top_p = gr.Slider(
-                            label="Top-p (nucleus sampling)",
-                            value=0.92,
-                            minimum=0.0,
-                            maximum=1,
-                            step=0.01,
-                            interactive=True,
-                            info=(
-                                "Sample from the smallest possible set of tokens whose cumulative probability "
-                                "exceeds top_p. Set to 1 to disable and sample from all tokens."
-                            ),
-                        )
-                with gr.Column():
-                    with gr.Row():
-                        top_k = gr.Slider(
-                            label="Top-k",
-                            value=100,
-                            minimum=0.0,
-                            maximum=200,
-                            step=1,
-                            interactive=True,
-                            info="Sample from a shortlist of top-k tokens — 0 to disable and sample from all tokens.",
-                        )
-                with gr.Column():
-                    with gr.Row():
-                        max_new_tokens = gr.Slider(
-                            label="Maximum new tokens",
-                            value=512,
-                            minimum=0,
-                            maximum=1664,
-                            step=5,
-                            interactive=True,
-                            info="The maximum number of new tokens to generate",
-                        )
+            with gr.Accordion("Advanced Options:"):
+                with gr.Row():
+                    with gr.Column():
+                        with gr.Row():
+                            temperature = gr.Slider(
+                                label="Temperature",
+                                value=0.3,
+                                minimum=0.0,
+                                maximum=2.0,
+                                step=0.1,
+                                interactive=True,
+                                info="Higher values produce more diverse outputs",
+                            )
+                    with gr.Column():
+                        with gr.Row():
+                            top_p = gr.Slider(
+                                label="Top-p (nucleus sampling)",
+                                value=0.92,
+                                minimum=0.0,
+                                maximum=1,
+                                step=0.01,
+                                interactive=True,
+                                info=(
+                                    "Sample from the smallest possible set of tokens whose cumulative probability "
+                                    "exceeds top_p. Set to 1 to disable and sample from all tokens."
+                                ),
+                            )
+                    with gr.Column():
+                        with gr.Row():
+                            top_k = gr.Slider(
+                                label="Top-k",
+                                value=100,
+                                minimum=0.0,
+                                maximum=200,
+                                step=1,
+                                interactive=True,
+                                info="Sample from a shortlist of top-k tokens — 0 to disable and sample from all tokens.",
+                            )
+                    with gr.Column():
+                        with gr.Row():
+                            max_new_tokens = gr.Slider(
+                                label="Maximum new tokens",
+                                value=512,
+                                minimum=0,
+                                maximum=1664,
+                                step=5,
+                                interactive=True,
+                                info="The maximum number of new tokens to generate",
+                            )
     with gr.Row():
-        submit = gr.Button("Generate Answers")
-        clear_button = gr.Button("Clear")
+        submit = gr.Button("Submit")
     with gr.Row():
         with gr.Box():
             gr.Markdown("**MPT-7B-Instruct**")
@@ -161,20 +161,14 @@ with gr.Blocks(theme=theme) as demo:
             outputs=output_7b,
         )
     submit.click(
-        clear, [], []
-    ).then(
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
-    )
+    ).before(clear)
     instruction.submit(
-        clear, [], []
-    ).then(
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
-    )
-
-    clear_button.click(clear, [], [])
+    ).before(clear)
 
 demo.queue(concurrency_count=4).launch(debug=True)
