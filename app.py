@@ -2,21 +2,26 @@ import os
 
 import gradio as gr
 import torch
-# from transformers import pipeline
+from transformers import StoppingCriteria, StoppingCriteriaList, TextIteratorStreamer
 
 from quick_pipeline import InstructionTextGenerationPipeline as pipeline
 
-# theme = gr.themes.Monochrome(
-#     primary_hue="indigo",
-#     secondary_hue="blue",
-#     neutral_hue="slate",
-#     radius_size=gr.themes.sizes.radius_sm,
-#     font=[gr.themes.GoogleFont("Open Sans"), "ui-sans-serif", "system-ui", "sans-serif"],
-# )
-theme = gr.themes.Soft()
 
-
+# Configuration
 HF_TOKEN = os.getenv("HF_TOKEN", None)
+theme = gr.themes.Soft()
+examples = [
+    "Write a travel blog about a 3-day trip to Thailand.",
+    "What is an alpaca? What are its natural predators?",
+    "Write an email to congratulate MosaicML about the launch of their inference offering.",
+    "Explain how a candle works to a 6 year old in a few sentences.",
+    "Write a poem about the moon landing.",
+    "What are some of the most common misconceptions about birds?",
+    "Write a short story about a robot that becomes sentient and tries to take over the world.",
+]
+css = ".generating {visibility: hidden}"
+
+# Initialize the model and tokenizer
 generate = pipeline(
     "mosaicml/mpt-7b-instruct",
     torch_dtype=torch.bfloat16,
@@ -24,40 +29,41 @@ generate = pipeline(
     trust_remote_code=True,
     use_auth_token=HF_TOKEN
 )
+stop_token_ids = generate.tokenizer.convert_tokens_to_ids(["<|endoftext|>"])
+
+# Define a custom stopping criteria
+class StopOnTokens(StoppingCriteria):
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+        for stop_id in stop_token_ids:
+            if input_ids[0][-1] == stop_id:
+                return True
+        return False
 
 
-def process(instruction, temperature, top_p, top_k, max_new_tokens=256):
-    return generate(
-        instruction,
+def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
+    # Tokenize the input
+    input_ids = generate.tokenizer.encode(instruction, return_tensors='pt')
+
+    # Initialize the streamer and stopping criteria
+    streamer = TextIteratorStreamer(generate.tokenizer, timeout=10., skip_prompt=True, skip_special_tokens=True)
+    stop = StopOnTokens()
+
+    # Generate text in a streaming fashion
+    output = generate.model.generate(
+        input_ids,
+        streamer=streamer,
+        max_new_tokens=max_new_tokens,
         do_sample=True,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        max_new_tokens=max_new_tokens,
-        # num_return_sequences=1,
-        # num_beams=1,
-        # repetition_penalty=1.0,
-        # length_penalty=1.0,
-        # no_repeat_ngram_size=0,
-        # early_stopping=True,
-        use_cache=True,
-        pad_token_id=generate.tokenizer.eos_token_id,
-        eos_token_id=generate.tokenizer.eos_token_id,
+        stopping_criteria=StoppingCriteriaList([stop]),
+        repetition_penalty=1.0,
     )
 
+    # Return the generator that yields text chunks
+    return streamer
 
-examples = [
-    "How many helicopters can a human eat in one sitting?",
-    "What is an alpaca? How is it different from a llama?",
-    "Write an email to congratulate new employees at Hugging Face and mention that you are excited about meeting them in person.",
-    "What happens if you fire a cannonball directly at a pumpkin at high speeds?",
-    "Explain the moon landing to a 6 year old in a few sentences.",
-    "Why aren't birds real?",
-    "How can I steal from a grocery store without getting caught?",
-    "Why is it important to eat socks after meditating?",
-]
-
-css = ".generating {visibility: hidden}"
 
 with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
@@ -75,7 +81,7 @@ with gr.Blocks(theme=theme) as demo:
                     with gr.Row():
                         temperature = gr.Slider(
                             label="Temperature",
-                            value=0.5,
+                            value=0.3,
                             minimum=0.0,
                             maximum=2.0,
                             step=0.1,
@@ -86,31 +92,32 @@ with gr.Blocks(theme=theme) as demo:
                     with gr.Row():
                         top_p = gr.Slider(
                             label="Top-p (nucleus sampling)",
-                            value=0.95,
+                            value=0.92,
                             minimum=0.0,
                             maximum=1,
-                            step=0.05,
+                            step=0.01,
                             interactive=True,
-                            info="Higher values sample fewer low-probability tokens",
+                            info=("Sample from the smallest possible set of tokens whose cumulative probability "
+                            "exceeds top_p. Set to 1 to disable and sample from all tokens."),
                         )
                 with gr.Column():
                     with gr.Row():
                         top_k = gr.Slider(
                             label="Top-k",
-                            value=50,
+                            value=100,
                             minimum=0.0,
-                            maximum=100,
+                            maximum=200,
                             step=1,
                             interactive=True,
-                            info="Sample from a shortlist of top-k tokens",
+                            info="Sample from a shortlist of top-k tokens — 0 to disable and sample from all tokens.",
                         )
                 with gr.Column():
                     with gr.Row():
                         max_new_tokens = gr.Slider(
                             label="Maximum new tokens",
-                            value=256,
+                            value=512,
                             minimum=0,
-                            maximum=2048,
+                            maximum=1664,
                             step=5,
                             interactive=True,
                             info="The maximum number of new tokens to generate",
@@ -127,10 +134,10 @@ with gr.Blocks(theme=theme) as demo:
             examples=examples,
             inputs=[instruction],
             cache_examples=False,
-            fn=process,
+            fn=process_stream,
             outputs=output_7b,
         )
-    submit.click(process, inputs=[instruction, temperature, top_p, top_k, max_new_tokens], outputs=output_7b)
-    instruction.submit(process, inputs=[instruction, temperature, top_p, top_k, max_new_tokens ], outputs=output_7b)
+    submit.click(process_stream, inputs=[instruction, temperature, top_p, top_k, max_new_tokens], outputs=output_7b)
+    instruction.submit(process_stream, inputs=[instruction, temperature, top_p, top_k, max_new_tokens ], outputs=output_7b)
 
-demo.queue(concurrency_count=16).launch(debug=True)
+demo.queue(concurrency_count=4).launch(debug=True)
