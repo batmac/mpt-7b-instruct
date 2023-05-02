@@ -68,6 +68,7 @@ class InstructionTextGenerationPipeline:
             "do_sample": True,
             "eos_token_id": self.tokenizer.eos_token_id,
             "pad_token_id": self.tokenizer.pad_token_id,
+            "repetition_penalty": 0.8,
         }
 
     def __call__(
