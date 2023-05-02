@@ -1,3 +1,4 @@
+# todo if time: add CONTINUE button
 import os
 from threading import Thread
 
@@ -75,6 +76,9 @@ def process_stream(instruction, response, temperature, top_p, top_k, max_new_tok
         yield response
 
 
+def clear():
+    output_7b.clear()
+
 
 with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
@@ -141,8 +145,7 @@ with gr.Blocks(theme=theme) as demo:
                         )
     with gr.Row():
         submit = gr.Button("Generate Answers")
-        stop = gr.Button("Stop")
-        clear = gr.Button("Clear")
+        clear_button = gr.Button("Clear")
     with gr.Row():
         with gr.Box():
             gr.Markdown("**MPT-7B-Instruct**")
@@ -158,18 +161,20 @@ with gr.Blocks(theme=theme) as demo:
             outputs=output_7b,
         )
     submit.click(
+        clear, [], []
+    ).then(
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
-    instruction.submit(
+    instruction.click(
+        clear, [], []
+    ).then(
         process_stream,
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
-    # these don't work...
-    # stop.click(fn=None, inputs=None, outputs=None, cancels=[
-    #            submit, instruction], queue=False)
-    # clear.click(lambda: None, None, [output_7b], queue=False)
+
+    clear_button.click(clear, [], [])
 
 demo.queue(concurrency_count=4).launch(debug=True)
