@@ -68,7 +68,6 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
     output = generate.model.generate(
         input_ids,
         streamer=streamer,
-        do_sample=True,
         stopping_criteria=StoppingCriteriaList([stop]),
         **gkw,
     )
