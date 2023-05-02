@@ -65,7 +65,7 @@ class InstructionTextGenerationPipeline:
             "do_sample": True,
             "eos_token_id": self.tokenizer.eos_token_id,
             "pad_token_id": self.tokenizer.pad_token_id,
-            "repetition_penalty": 0.8,
+            "repetition_penalty": 1.2,  # 1.0 means no penalty, > 1.0 means penalty, 1.2 from CTRL paper
         }
 
     def format_instruction(instruction):
