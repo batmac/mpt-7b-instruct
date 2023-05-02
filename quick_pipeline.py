@@ -60,14 +60,14 @@ class InstructionTextGenerationPipeline:
             'pad_token_id': self.tokenizer.pad_token_id,
         }
 
-def __call__(self, instruction: str, **generate_kwargs: Dict[str, Any]) -> Tuple[str, str, float]:
-    s = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
-    input_ids = self.tokenizer(s, return_tensors='pt').input_ids
-    input_ids = input_ids.to(self.model.device)
-    gkw = self.generate_kwargs | generate_kwargs
-    with torch.no_grad():
-        output_ids = self.model.generate(input_ids, **gkw)
-    # Slice the output_ids tensor to get only new tokens
-    new_tokens = output_ids[0, len(input_ids[0]):]
-    output_text = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
-    return output_text
+    def __call__(self, instruction: str, **generate_kwargs: Dict[str, Any]) -> Tuple[str, str, float]:
+        s = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
+        input_ids = self.tokenizer(s, return_tensors='pt').input_ids
+        input_ids = input_ids.to(self.model.device)
+        gkw = self.generate_kwargs | generate_kwargs
+        with torch.no_grad():
+            output_ids = self.model.generate(input_ids, **gkw)
+        # Slice the output_ids tensor to get only new tokens
+        new_tokens = output_ids[0, len(input_ids[0]):]
+        output_text = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+        return output_text
