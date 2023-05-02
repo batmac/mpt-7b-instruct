@@ -26,6 +26,26 @@ generate = pipeline(
 )
 
 
+def process(instruction, temperature, top_p, top_k, max_new_tokens=256):
+    return generate(
+        instruction,
+        do_sample=True,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+        max_new_tokens=max_new_tokens,
+        # num_return_sequences=1,
+        # num_beams=1,
+        # repetition_penalty=1.0,
+        # length_penalty=1.0,
+        # no_repeat_ngram_size=0,
+        # early_stopping=True,
+        use_cache=True,
+        pad_token_id=generate.tokenizer.eos_token_id,
+        eos_token_id=generate.tokenizer.eos_token_id,
+    )
+
+
 examples = [
     "How many helicopters can a human eat in one sitting?",
     "What is an alpaca? How is it different from a llama?",
@@ -95,8 +115,8 @@ with gr.Blocks(theme=theme) as demo:
                             interactive=True,
                             info="The maximum number of new tokens to generate",
                         )
-                with gr.Row():
-                    submit = gr.Button("Generate Answers")
+    with gr.Row():
+        submit = gr.Button("Generate Answers")
     with gr.Row():
         with gr.Box():
             gr.Markdown("**MPT-7B-Instruct**")
@@ -104,13 +124,13 @@ with gr.Blocks(theme=theme) as demo:
 
     with gr.Row():
         gr.Examples(
-                    examples=examples,
-                    inputs=[instruction],
-                    cache_examples=False,
-                    fn=generate,
-                    outputs=output_7b,
-                )
-    submit.click(generate, inputs=[instruction, temperature, top_p, top_k, max_new_tokens], outputs=output_7b)
-    instruction.submit(generate, inputs=[instruction, temperature, top_p, top_k, max_new_tokens ], outputs=output_7b)
+            examples=examples,
+            inputs=[instruction],
+            cache_examples=False,
+            fn=process,
+            outputs=output_7b,
+        )
+    submit.click(process, inputs=[instruction, temperature, top_p, top_k, max_new_tokens], outputs=output_7b)
+    instruction.submit(process, inputs=[instruction, temperature, top_p, top_k, max_new_tokens ], outputs=output_7b)
 
 demo.queue(concurrency_count=16).launch(debug=True)
