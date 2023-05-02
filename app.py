@@ -58,6 +58,7 @@ def process_stream(instruction, response, temperature, top_p, top_k, max_new_tok
     gkw = {
         **generate.generate_kwargs,
         **{
+            "input_ids": input_ids,
             "max_new_tokens": max_new_tokens,
             "temperature": temperature,
             "top_p": top_p,
