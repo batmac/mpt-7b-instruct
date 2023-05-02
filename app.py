@@ -45,7 +45,7 @@ class StopOnTokens(StoppingCriteria):
 
 def process_stream(instruction, temperature, top_p, top_k, max_new_tokens=256):
     # Tokenize the input
-    input_ids = generate.tokenizer.encode(instruction, return_tensors="pt").input_ids
+    input_ids = generate.tokenizer(instruction, return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
 
     # Initialize the streamer and stopping criteria
@@ -81,7 +81,7 @@ with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
         """<h1><center>MosaicML MPT-7B-Instruct</center></h1>
 
-        This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approx [15K instruction demonstrations](https://huggingface.co/datasets/HuggingFaceH4/databricks_dolly_15k)
+        This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approx [15K instruction demonstrations created by Databricks](https://huggingface.co/datasets/HuggingFaceH4/databricks_dolly_15k)
 """
     )
     with gr.Row():
