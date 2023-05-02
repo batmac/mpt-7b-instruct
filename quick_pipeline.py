@@ -9,9 +9,6 @@ INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
 END_KEY = "### End"
 INTRO_BLURB = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
-
-# This is the prompt that is used for generating responses using an already trained model.  It ends with the response
-# key, where the job of the model is to provide the completion that follows it (i.e. the response itself).
 PROMPT_FOR_GENERATION_FORMAT = """{intro}
 
 {instruction_key}
@@ -70,6 +67,9 @@ class InstructionTextGenerationPipeline:
             "pad_token_id": self.tokenizer.pad_token_id,
             "repetition_penalty": 0.8,
         }
+
+    def format_instruction(instruction):
+        return PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
 
     def __call__(
         self, instruction: str, **generate_kwargs: Dict[str, Any]

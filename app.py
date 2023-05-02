@@ -46,7 +46,7 @@ class StopOnTokens(StoppingCriteria):
 
 def process_stream(instruction, response, temperature, top_p, top_k, max_new_tokens):
     # Tokenize the input
-    input_ids = generate.tokenizer(instruction, return_tensors="pt").input_ids
+    input_ids = generate.tokenizer(generate.format_instruction(instruction), return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
 
     # Initialize the streamer and stopping criteria
@@ -141,6 +141,8 @@ with gr.Blocks(theme=theme) as demo:
                         )
     with gr.Row():
         submit = gr.Button("Generate Answers")
+        stop = gr.Button("Stop")
+        clear = gr.Button("Clear")
     with gr.Row():
         with gr.Box():
             gr.Markdown("**MPT-7B-Instruct**")
@@ -165,5 +167,8 @@ with gr.Blocks(theme=theme) as demo:
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
+    stop.click(fn=None, inputs=None, outputs=None, cancels=[
+               submit, instruction], queue=False)
+    clear.click(lambda: None, None, [output_7b], queue=False)
 
 demo.queue(concurrency_count=4).launch(debug=True)
