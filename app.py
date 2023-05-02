@@ -1,4 +1,5 @@
 import os
+from threading import Thread
 
 import gradio as gr
 import torch
@@ -43,7 +44,7 @@ class StopOnTokens(StoppingCriteria):
         return False
 
 
-def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, callback):
+def process_stream(instruction, response, temperature, top_p, top_k, max_new_tokens):
     # Tokenize the input
     input_ids = generate.tokenizer(instruction, return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
@@ -61,20 +62,17 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, callb
             "temperature": temperature,
             "top_p": top_p,
             "top_k": top_k,
+            "streamer": streamer,
+            "stopping_criteria": StoppingCriteriaList([stop]),
         },
     }
 
-    # Generate text streaming
-    generate.model.generate(
-        input_ids,
-        streamer=streamer,
-        stopping_criteria=StoppingCriteriaList([stop]),
-        **gkw,
-    )
-
-    # Use the callback function to handle the generated text chunks
+    thread = Thread(target=generate.model.generate, kwargs=gkw)
+    thread.start()
     for new_text in streamer:
-        callback(new_text)
+        response += new_text
+        yield response
+
 
 
 with gr.Blocks(theme=theme) as demo:
@@ -148,12 +146,6 @@ with gr.Blocks(theme=theme) as demo:
             output_7b = gr.Markdown()
 
 
-    # love to mix logic with display code, just like jquery!
-    def update_output(new_text):
-        # Update the Gradio output with the new text
-        output_7b.set_value(output_7b.get_value() + new_text)
-
-
     with gr.Row():
         gr.Examples(
             examples=examples,
@@ -164,13 +156,13 @@ with gr.Blocks(theme=theme) as demo:
         )
     submit.click(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, update_output],
-        outputs="",
+        inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
+        outputs=output_7b,
     )
     instruction.submit(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, update_output],
-        outputs="",
+        inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
+        outputs=output_7b,
     )
 
 demo.queue(concurrency_count=4).launch(debug=True)
