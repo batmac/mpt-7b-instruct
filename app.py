@@ -45,12 +45,8 @@ class StopOnTokens(StoppingCriteria):
         return False
 
 
-def clear():
-    output_7b.text = ""
 
-
-def process_stream(instruction, response, temperature, top_p, top_k, max_new_tokens):
-    clear()
+def process_stream(instruction, temperature, top_p, top_k, max_new_tokens):
     # Tokenize the input
     input_ids = generate.tokenizer(generate.format_instruction(instruction), return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
@@ -76,6 +72,7 @@ def process_stream(instruction, response, temperature, top_p, top_k, max_new_tok
 
     thread = Thread(target=generate.model.generate, kwargs=gkw)
     thread.start()
+    response = ""
     for new_text in streamer:
         response += new_text
         yield response
@@ -96,13 +93,13 @@ with gr.Blocks(theme=theme) as demo:
                     label="Question/Instruction",
                     elem_id="q-input",
                 )
-            with gr.Accordion("Advanced Options:"):
+            with gr.Accordion("Advanced Options:", open=False):
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
                             temperature = gr.Slider(
                                 label="Temperature",
-                                value=0.3,
+                                value=0.4,
                                 minimum=0.0,
                                 maximum=2.0,
                                 step=0.1,
@@ -113,7 +110,7 @@ with gr.Blocks(theme=theme) as demo:
                         with gr.Row():
                             top_p = gr.Slider(
                                 label="Top-p (nucleus sampling)",
-                                value=0.92,
+                                value=0.90,
                                 minimum=0.0,
                                 maximum=1,
                                 step=0.01,
@@ -127,7 +124,7 @@ with gr.Blocks(theme=theme) as demo:
                         with gr.Row():
                             top_k = gr.Slider(
                                 label="Top-k",
-                                value=100,
+                                value=0,
                                 minimum=0.0,
                                 maximum=200,
                                 step=1,
@@ -163,12 +160,12 @@ with gr.Blocks(theme=theme) as demo:
         )
     submit.click(
         process_stream,
-        inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
     instruction.submit(
         process_stream,
-        inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
 
