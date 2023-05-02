@@ -167,7 +167,7 @@ with gr.Blocks(theme=theme) as demo:
         inputs=[instruction, output_7b, temperature, top_p, top_k, max_new_tokens],
         outputs=output_7b,
     )
-    instruction.click(
+    instruction.submit(
         clear, [], []
     ).then(
         process_stream,
