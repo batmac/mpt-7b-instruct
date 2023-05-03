@@ -92,7 +92,7 @@ with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
         """<h1><center>MosaicML MPT-7B-Instruct</center></h1>
 
-        This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approx [15K instruction demonstrations created by Databricks](https://huggingface.co/datasets/HuggingFaceH4/databricks_dolly_15k)
+        This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approximately [60,000 instruction demonstrations](https://huggingface.co/datasets/sam-mosaic/dolly_hhrlhf)
 """
     )
     with gr.Row():
@@ -158,7 +158,6 @@ with gr.Blocks(theme=theme) as demo:
         with gr.Box():
             gr.Markdown("**MPT-7B-Instruct**")
             output_7b = gr.Markdown()
-
 
     with gr.Row():
         gr.Examples(
