@@ -1,6 +1,6 @@
 ---
 title: MPT-7B-Instruct
-emoji: 🙋🏼
+emoji: 💁
 colorFrom: yellow
 colorTo: purple
 sdk: gradio
