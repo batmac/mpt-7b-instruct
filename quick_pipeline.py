@@ -28,14 +28,12 @@ class InstructionTextGenerationPipeline:
         self,
         model_name,
         torch_dtype=torch.bfloat16,
-        attn_impl="torch",
         trust_remote_code=True,
         use_auth_token=None,
     ) -> None:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch_dtype,
-            attn_impl=attn_impl,
             trust_remote_code=trust_remote_code,
             use_auth_token=use_auth_token,
         )
