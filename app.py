@@ -1,11 +1,14 @@
 # Copyright 2023 MosaicML spaces authors
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: Apache-2.0
 # and
 # the https://huggingface.co/spaces/HuggingFaceH4/databricks-dolly authors
+import datetime
 import os
-from threading import Thread
+from threading import Event, Thread
+from uuid import uuid4
 
 import gradio as gr
+import requests
 import torch
 from transformers import StoppingCriteria, StoppingCriteriaList, TextIteratorStreamer
 
@@ -14,17 +17,16 @@ from quick_pipeline import InstructionTextGenerationPipeline as pipeline
 
 # Configuration
 HF_TOKEN = os.getenv("HF_TOKEN", None)
-theme = gr.themes.Soft()
+
 examples = [
     # to do: add coupled hparams so e.g. poem has higher temp
     "Write a travel blog about a 3-day trip to Thailand.",
-    "What is an alpaca? What are its natural predators?",
+    "Write a short story about a robot that has a nice day.",
+    "Convert the following to a single line of JSON:\n\n```name: John\nage: 30\naddress:\n  street:123 Main St.\n  city: San Francisco\n  state: CA\n  zip: 94101\n```",
     "Write a quick email to congratulate MosaicML about the launch of their inference offering.",
     "Explain how a candle works to a 6 year old in a few sentences.",
     "What are some of the most common misconceptions about birds?",
-    "Write a short story about a robot that has a nice day.",
 ]
-css = ".generating {visibility: hidden}"
 
 # Initialize the model and tokenizer
 generate = pipeline(
@@ -48,8 +50,28 @@ class StopOnTokens(StoppingCriteria):
         return False
 
 
+def log_conversation(session_id, instruction, response, generate_kwargs):
+    logging_url = os.getenv("LOGGING_URL", None)
+    if logging_url is None:
+        return
 
-def process_stream(instruction, temperature, top_p, top_k, max_new_tokens):
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
+    data = {
+        "session_id": session_id,
+        "timestamp": timestamp,
+        "instruction": instruction,
+        "response": response,
+        "generate_kwargs": generate_kwargs,
+    }
+
+    try:
+        requests.post(logging_url, json=data)
+    except requests.exceptions.RequestException as e:
+        print(f"Error logging conversation: {e}")
+
+
+def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, session_id):
     # Tokenize the input
     input_ids = generate.tokenizer(generate.format_instruction(instruction), return_tensors="pt").input_ids
     input_ids = input_ids.to(generate.model.device)
@@ -80,20 +102,40 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens):
         },
     }
 
-    thread = Thread(target=generate.model.generate, kwargs=gkw)
-    thread.start()
     response = ""
+    stream_complete = Event()
+
+    def generate_and_signal_complete():
+        generate.model.generate(**gkw)
+        stream_complete.set()
+
+    def log_after_stream_complete():
+        stream_complete.wait()
+        log_conversation(session_id, instruction, response, {
+            "top_k": top_k,
+            "top_p": top_p,
+            "temperature": temperature,
+        })
+
+    t1 = Thread(target=generate_and_signal_complete)
+    t1.start()
+
+    t2 = Thread(target=log_after_stream_complete)
+    t2.start()
+
     for new_text in streamer:
         response += new_text
         yield response
 
 
-with gr.Blocks(theme=theme) as demo:
+with gr.Blocks(theme=gr.themes.Soft(), css=".disclaimer {font-size: 10px}") as demo:
+    session_id = gr.State(lambda : str(uuid4()))
     gr.Markdown(
         """<h1><center>MosaicML MPT-7B-Instruct</center></h1>
 
         This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approximately [60,000 instruction demonstrations](https://huggingface.co/datasets/sam-mosaic/dolly_hhrlhf)
-"""
+
+        This is running on a smaller, shared GPU, so it may take a few seconds to respond. If you want to run it on your own GPU, you can [download the model from HuggingFace](https://huggingface.co/mosaicml/mpt-7b-instruct) and run it locally. Or [Duplicate the Space](https://huggingface.co/spaces/mosaicml/mpt-7b-instruct?duplicate=true) to skip the queue and run in a private space."""
     )
     with gr.Row():
         with gr.Column():
@@ -167,15 +209,23 @@ with gr.Blocks(theme=theme) as demo:
             fn=process_stream,
             outputs=output_7b,
         )
+    with gr.Row():
+        gr.Markdown("Disclaimer: MPT-7B can produce factually incorrect output, and should not be relied on to produce "
+                    "factually accurate information. MPT-7B was trained on various public datasets; while great efforts "
+                    "have been taken to clean the pretraining data, it is possible that this model could generate lewd, "
+                    "biased, or otherwise offensive outputs.",
+                    elem_classes=["disclaimer"],
+        )
+
     submit.click(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, conversation_id],
         outputs=output_7b,
     )
     instruction.submit(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, conversation_id],
         outputs=output_7b,
     )
 
-demo.queue(concurrency_count=4).launch(debug=True)
+demo.queue(max_size=32, concurrency_count=4).launch(debug=True)
