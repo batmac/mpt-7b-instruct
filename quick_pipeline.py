@@ -34,7 +34,6 @@ class InstructionTextGenerationPipeline:
     ) -> None:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            attn_impl=attn_impl,
             torch_dtype=torch_dtype,
             trust_remote_code=trust_remote_code,
             use_auth_token=use_auth_token,
