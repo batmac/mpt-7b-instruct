@@ -92,6 +92,8 @@ with gr.Blocks(theme=theme) as demo:
         """<h1><center>MosaicML MPT-7B-Instruct</center></h1>
 
         This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approximately [60,000 instruction demonstrations](https://huggingface.co/datasets/sam-mosaic/dolly_hhrlhf)
+
+        Disclaimer: MPT-7B can produce factually incorrect output, and should not be relied on to produce factually accurate information. MPT-7B was trained on various public datasets; while great efforts have been taken to clean the pretraining data, it is possible that this model could generate lewd, biased or otherwise offensive outputs.
 """
     )
     with gr.Row():
