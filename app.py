@@ -30,7 +30,6 @@ css = ".generating {visibility: hidden}"
 generate = pipeline(
     "mosaicml/mpt-7b-instruct-rc",
     torch_dtype=torch.bfloat16,
-    attn_impl="torch",
     trust_remote_code=True,
     use_auth_token=HF_TOKEN,
 )
