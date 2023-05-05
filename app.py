@@ -30,9 +30,8 @@ examples = [
 
 # Initialize the model and tokenizer
 generate = pipeline(
-    "mosaicml/mpt-7b-instruct-rc",
+    "mosaicml/mpt-7b-instruct",
     torch_dtype=torch.bfloat16,
-    attn_impl="torch",
     trust_remote_code=True,
     use_auth_token=HF_TOKEN,
 )
@@ -219,12 +218,12 @@ with gr.Blocks(theme=gr.themes.Soft(), css=".disclaimer {font-size: 10px}") as d
 
     submit.click(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, conversation_id],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, session_id],
         outputs=output_7b,
     )
     instruction.submit(
         process_stream,
-        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, conversation_id],
+        inputs=[instruction, temperature, top_p, top_k, max_new_tokens, session_id],
         outputs=output_7b,
     )
 

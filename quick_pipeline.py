@@ -34,8 +34,8 @@ class InstructionTextGenerationPipeline:
     ) -> None:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            attn_impl=attn_impl,
             torch_dtype=torch_dtype,
+            attn_impl=attn_impl,
             trust_remote_code=trust_remote_code,
             use_auth_token=use_auth_token,
         )
@@ -66,7 +66,7 @@ class InstructionTextGenerationPipeline:
             "do_sample": True,
             "eos_token_id": self.tokenizer.eos_token_id,
             "pad_token_id": self.tokenizer.pad_token_id,
-            "repetition_penalty": 1.2,  # 1.0 means no penalty, > 1.0 means penalty, 1.2 from CTRL paper
+            "repetition_penalty": 1.1,  # 1.0 means no penalty, > 1.0 means penalty, 1.2 from CTRL paper
         }
 
     def format_instruction(self, instruction):
