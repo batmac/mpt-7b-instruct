@@ -28,7 +28,7 @@ css = ".generating {visibility: hidden}"
 
 # Initialize the model and tokenizer
 generate = pipeline(
-    "mosaicml/mpt-7b-instruct",
+    "mosaicml/mpt-7b-instruct-rc",
     torch_dtype=torch.bfloat16,
     attn_impl="torch",
     trust_remote_code=True,
