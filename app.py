@@ -93,6 +93,8 @@ with gr.Blocks(theme=theme) as demo:
 
         This demo is of [MPT-7B-Instruct](https://huggingface.co/mosaicml/mpt-7b-instruct). It is based on [MPT-7B](https://huggingface.co/mosaicml/mpt-7b) fine-tuned with approximately [60,000 instruction demonstrations](https://huggingface.co/datasets/sam-mosaic/dolly_hhrlhf)
 
+        This is running on a smaller, shared GPU, so it may take a few seconds to respond. If you want to run it on your own GPU, you can [download the model from HuggingFace](https://huggingface.co/mosaicml/mpt-7b-chat) and run it locally. Or <a href="https://huggingface.co/spaces/mosaicml/mpt-7b-chat?duplicate=true"><img src="https://bit.ly/3gLdBN6" alt="Duplicate Space"></a> Duplicate the Space to skip the queue and run in a private space
+
         Disclaimer: MPT-7B can produce factually incorrect output, and should not be relied on to produce factually accurate information. MPT-7B was trained on various public datasets; while great efforts have been taken to clean the pretraining data, it is possible that this model could generate lewd, biased or otherwise offensive outputs.
 """
     )
