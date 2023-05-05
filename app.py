@@ -54,7 +54,7 @@ def log_conversation(session_id, instruction, response, generate_kwargs):
     if logging_url is None:
         return
 
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     data = {
         "session_id": session_id,
@@ -72,7 +72,9 @@ def log_conversation(session_id, instruction, response, generate_kwargs):
 
 def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, session_id):
     # Tokenize the input
-    input_ids = generate.tokenizer(generate.format_instruction(instruction), return_tensors="pt").input_ids
+    input_ids = generate.tokenizer(
+        generate.format_instruction(instruction), return_tensors="pt"
+    ).input_ids
     input_ids = input_ids.to(generate.model.device)
 
     # Initialize the streamer and stopping criteria
@@ -110,11 +112,16 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, sessi
 
     def log_after_stream_complete():
         stream_complete.wait()
-        log_conversation(session_id, instruction, response, {
-            "top_k": top_k,
-            "top_p": top_p,
-            "temperature": temperature,
-        })
+        log_conversation(
+            session_id,
+            instruction,
+            response,
+            {
+                "top_k": top_k,
+                "top_p": top_p,
+                "temperature": temperature,
+            },
+        )
 
     t1 = Thread(target=generate_and_signal_complete)
     t1.start()
@@ -127,8 +134,11 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, sessi
         yield response
 
 
-with gr.Blocks(theme=gr.themes.Soft(), css=".disclaimer {font-size: 10px}") as demo:
-    session_id = gr.State(lambda : str(uuid4()))
+with gr.Blocks(
+    theme=gr.themes.Soft(),
+    css=".disclaimer {font-variant-caps: all-small-caps;}",
+) as demo:
+    session_id = gr.State(lambda: str(uuid4()))
     gr.Markdown(
         """<h1><center>MosaicML MPT-7B-Instruct</center></h1>
 
@@ -209,11 +219,17 @@ with gr.Blocks(theme=gr.themes.Soft(), css=".disclaimer {font-size: 10px}") as d
             outputs=output_7b,
         )
     with gr.Row():
-        gr.Markdown("Disclaimer: MPT-7B can produce factually incorrect output, and should not be relied on to produce "
-                    "factually accurate information. MPT-7B was trained on various public datasets; while great efforts "
-                    "have been taken to clean the pretraining data, it is possible that this model could generate lewd, "
-                    "biased, or otherwise offensive outputs.",
-                    elem_classes=["disclaimer"],
+        gr.Markdown(
+            "Disclaimer: MPT-7B can produce factually incorrect output, and should not be relied on to produce "
+            "factually accurate information. MPT-7B was trained on various public datasets; while great efforts "
+            "have been taken to clean the pretraining data, it is possible that this model could generate lewd, "
+            "biased, or otherwise offensive outputs.",
+            elem_classes=["disclaimer"],
+        )
+    with gr.Row():
+        gr.Markdown(
+            "[Privacy policy](https://gist.github.com/samhavens/c29c68cdcd420a9aa0202d0839876dac)]",
+            elem_classes=["disclaimer"],
         )
 
     submit.click(
