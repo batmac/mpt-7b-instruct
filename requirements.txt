@@ -2,3 +2,4 @@
 einops
 torch
 transformers
+gradio

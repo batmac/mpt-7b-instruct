@@ -1,9 +1,8 @@
-from typing import Any, Dict, Tuple
 import warnings
+from typing import Any, Dict, Tuple
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"

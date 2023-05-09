@@ -14,7 +14,6 @@ from transformers import StoppingCriteria, StoppingCriteriaList, TextIteratorStr
 
 from quick_pipeline import InstructionTextGenerationPipeline as pipeline
 
-
 # Configuration
 HF_TOKEN = os.getenv("HF_TOKEN", None)
 
@@ -40,7 +39,9 @@ stop_token_ids = generate.tokenizer.convert_tokens_to_ids(["<|endoftext|>"])
 
 # Define a custom stopping criteria
 class StopOnTokens(StoppingCriteria):
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
         for stop_id in stop_token_ids:
             if input_ids[0][-1] == stop_id:
                 return True
@@ -77,7 +78,7 @@ def process_stream(instruction, temperature, top_p, top_k, max_new_tokens, sessi
 
     # Initialize the streamer and stopping criteria
     streamer = TextIteratorStreamer(
-        generate.tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True
+        generate.tokenizer, timeout=100.0, skip_prompt=True, skip_special_tokens=True
     )
     stop = StopOnTokens()
 
@@ -243,4 +244,4 @@ with gr.Blocks(
         outputs=output_7b,
     )
 
-demo.queue(max_size=32, concurrency_count=4).launch(debug=True)
+demo.queue(max_size=32, concurrency_count=4).launch(debug=True, share=True)
